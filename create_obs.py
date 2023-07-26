@@ -21,6 +21,9 @@ Version:
   0.1
 """
 
+# import sys for args
+import sys
+sys.path.append('/Users/wbalmer/')
 # import ESO P2 api and getpass to manage user password
 import p2api
 from getpass import getpass
@@ -38,8 +41,6 @@ import p2Gravity as p2g
 from p2Gravity.common import *
 from p2Gravity.plot import *
 
-# import sys for args
-import sys
 
 # load aguments into a dictionnary
 dargs = args_to_dict(sys.argv)
