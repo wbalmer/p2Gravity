@@ -17,8 +17,9 @@ setup:
   concatenation: none          # if not none, a concatenation with this name will be created and all OBs put in here
   constraints:                 # additional constraints
     skyTransparency: "Variable, thin cirrus" 
-
-
+    airmass: 1.6
+    moonDistance: 10
+    atm: 85%
 
 # This section described the OBs, each made of a succession of template
 # Multiple OBs can de defined in a file, but will share the same above setup.
@@ -32,7 +33,7 @@ ObservingBlocks:
     # objects is a list fiber pointings and exposure settings which will be used in the sequence
     objects:
       s:                       # arbitrary label of you choice. In this example, s is the star
-        name: AB Pic star      # if coord_syst is whereistheplanet, this name is used to resolve the position
+        name: Central star     # if coord_syst is whereistheplanet, this name is used to resolve the position
         DET2.DIT: 1            # integration time (in s). Can be 0.3, 1, 3, 10, 30, 100, 300
         DET2.NDIT.OBJECT: 32   # Number of DITs on the object (4..320)
         DET2.NDIT.SKY: 32      # Number of DITs on sky (4..320)
