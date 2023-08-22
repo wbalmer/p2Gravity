@@ -6,7 +6,7 @@
 # Please refer to the ESO Template manual for additional information
 
 setup:
-  run_id: 112.25GE.003     # id of the run to upload the OB in the correct place
+  run_id: 112.25GE.002     # id of the run to upload the OB in the correct place
   date: 2024-01-01             # Required. But only useful if 'whereistheplanet' is used to predict position of the companion
   folder: P112run3   # Folder in P2 where the OB will be uploaded.
   INS.SPEC.RES: "MED"          # spectral resolution. LOW, MED, or HIGH
@@ -18,8 +18,7 @@ setup:
     skyTransparency: "Clear"
     airmass: 1.6
     moonDistance: 10
-    # seeing: 0.8
-
+    atm: 30%
 
 # This section described the OBs, each made of a succession of template
 # Multiple OBs can de defined in a file, but will share the same above setup.
@@ -27,6 +26,8 @@ setup:
 ObservingBlocks:
   # Each OB is identified by a label which will also appear in P2
   CAL_HD25535:
+    # set FT mode manually so the concat is happy
+    SEQ.FT.MODE: 1
     # now we move to the binary calibrator on which we need to perform a swap.
     description: binary swap for phase-reference  # a short description of what this OB is
     mode: dual_off                                # can be dual-on, dual-off, single-on, or single-off
@@ -51,7 +52,9 @@ ObservingBlocks:
       - A A swap B B sky
     calib: True
 
-  SCI_AFLepb_1sthour:
+  SCI_AFLepb_3hours:
+    # set FT mode manually so the concat is happy
+    SEQ.FT.MODE: 1
     # in this first OB, we'll observe the planet using whereistheplanet to set the coordinates
     description: on-planet off-axis observations  # a short description of what this OB is
     mode: dual_off                                # can be dual_wide_on, dual_wide_off, dual_on, dual_off, single_on, or single_off
@@ -63,60 +66,21 @@ ObservingBlocks:
       b:                       # arbitrary label of you choice. In this example, b is the planet
         name: AFLepb
         DET2.DIT: 100           # integration time (in s). Can be 0.3, 1, 3, 10, 30, 100, 300
-        DET2.NDIT.OBJECT: 4   # Number of DITs on the object (4..320)
-        DET2.NDIT.SKY: 4      # Number of DITs on sky (4..320)1
+        DET2.NDIT.OBJECT: 4    # Number of DITs on the object (4..320)
+        DET2.NDIT.SKY: 4       # Number of DITs on sky (4..320)1
     # now we describe the sequence of exposures
     # in dual-off, the sequence should contain the objects above with some swap when changing from one to the other
     # in this case, we only have observations on b, and no swap. We'll make 2 templates of 2 exp each
     sequence:
-      - b b sky
+      - b b sky b b
+      - b b sky b b
+      - b b sky b b
       - b b
-    calib: False
-
-  SCI_AFLepb_2ndhour:
-    # in this first OB, we'll observe the planet using whereistheplanet to set the coordinates
-    description: on-planet off-axis observations  # a short description of what this OB is
-    mode: dual_off                                # can be dual_wide_on, dual_wide_off, dual_on, dual_off, single_on, or single_off
-    target: AF Lep                                # this target name will be resolved in simbad to populate various fields.
-    coord_syst: whereistheplanet                  # in dual-off, the coordinates are set at acquisition. coord_syst is radec, pasep, or whereistheplanet
-    coord: AFLepb                                # units are mas and deg. just the target name if coord_syst=whereistheplanet
-    # objects is a list fiber pointings and exposure settings which will be used in the sequence
-    objects:
-      b:                       # arbitrary label of you choice. In this example, b is the planet
-        name: AFLepb
-        DET2.DIT: 100           # integration time (in s). Can be 0.3, 1, 3, 10, 30, 100, 300
-        DET2.NDIT.OBJECT: 4   # Number of DITs on the object (4..320)
-        DET2.NDIT.SKY: 4      # Number of DITs on sky (4..320)1
-    # now we describe the sequence of exposures
-    # in dual-off, the sequence should contain the objects above with some swap when changing from one to the other
-    # in this case, we only have observations on b, and no swap. We'll make 2 templates of 2 exp each
-    sequence:
-      - b b sky
-      - b b
-    calib: False
-
-  SCI_AFLepb_3rdhour:
-    # in this first OB, we'll observe the planet using whereistheplanet to set the coordinates
-    description: on-planet off-axis observations  # a short description of what this OB is
-    mode: dual_off                                # can be dual_wide_on, dual_wide_off, dual_on, dual_off, single_on, or single_off
-    target: AF Lep                                # this target name will be resolved in simbad to populate various fields.
-    coord_syst: whereistheplanet                  # in dual-off, the coordinates are set at acquisition. coord_syst is radec, pasep, or whereistheplanet
-    coord: AFLepb                                # units are mas and deg. just the target name if coord_syst=whereistheplanet
-    # objects is a list fiber pointings and exposure settings which will be used in the sequence
-    objects:
-      b:                       # arbitrary label of you choice. In this example, b is the planet
-        name: AFLepb
-        DET2.DIT: 100           # integration time (in s). Can be 0.3, 1, 3, 10, 30, 100, 300
-        DET2.NDIT.OBJECT: 4   # Number of DITs on the object (4..320)
-        DET2.NDIT.SKY: 4      # Number of DITs on sky (4..320)1
-    # now we describe the sequence of exposures
-    # in dual-off, the sequence should contain the objects above with some swap when changing from one to the other
-    # in this case, we only have observations on b, and no swap. We'll make 2 templates of 2 exp each
-    sequence:
-      - b sky b
     calib: False
 
   CAL_AFLep:
+    # set FT mode manually so the concat is happy
+    SEQ.FT.MODE: 1
     # central star to calibrate amplitude
     description: AFLep star in single-field
     mode: single_on
