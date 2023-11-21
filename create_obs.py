@@ -5,32 +5,8 @@
 The create_obs script is used to generate GRAVITY OBs and send them to P2
 To use this script, you need to call it with a YML file, see example below.
 
-Args:
-  file (str): Usually, this is the path the to YAML file describing the OBs. if "generate" is used, then this is the output name of pasted file.
-  generate (str, optional): if set, this script will copy an example in the current directory, to form an initial YML file that you can modify. Can be on of
-                            dual_on, dual_off, dual_off_calib, dual_wide_off, dual_wide_on, single_on
-  fov (int, optional): field-of-view to show in the plots. Default to 10*fiver_fov
-  bg (str, optional): path to a image file (jpg, png, etc.) to plot as a background begind the fiber FOV
-  bglim (list, optional): if bg is given, bglim must specify the limits of the bd image as bglim=[xleft,xright,ybottom,ytop] in mas
-  sc_color (str, optional): color to use to plot the science fiber. Default is python C1
-  ft_color (str, optional): color to use to plot the fringe-tracker fiber. Default is python C0
-  acq_only (bool, optional): only plot the acquition and not the individual subplots and text info
-  demo (bool, optional): if set, send the OBs to the P2 demo server
-  nogui (bool, optional): if set, do not plot a visual summary of the OBs before sending to P2, but send them without warning
-  help (bool, optional): print this help message and exit
-  dit (bool, optional): show the DIT delection figure and exit
-
-Examples:
-  python create_obs file=path/to/obs.yml --demo fov=1000
-  python create_obs file=path/to/obs.yml --nogui --demo
-  python create_obs --dit
-  python create_obs --help
-
 Authors:
   M. Nowak, and the exoGravity team.
-
-Version:
-  {}
 """
 
 # import sys for args
@@ -47,32 +23,59 @@ try:
 except: # if ruamel not available, switch back to pyyaml, which does not handle comments properly
     import yaml
     RUAMEL = False
-    
+
 # import this package
 import p2Gravity as p2g
 from p2Gravity.common import *
 from p2Gravity.plot import *
 
+# import sys and argparse for args
+import sys
+import argparse
 
-# import version
-from version import VERSION
+# create the parser for command lines arguments
+parser = argparse.ArgumentParser(description=
+"""
+Generate and send GRAVITY OBs to P2
+""")
 
-# load aguments into a dictionnary
-dargs = args_to_dict(sys.argv)
+# required arguments are the path to the folder containing the data, and the path to the config yml file to write
+parser.add_argument('file', type=str, help="the path the to input YAML configuration file (or output when using --generate).")
 
-if "help" in dargs.keys():
-    print(__doc__.format(VERSION))
-    sys.exit()
+# some optional arguments
+parser.add_argument("--generate", metavar="TYPE", type=str, default=argparse.SUPPRESS, choices=["dual_on", "dual_off", "dual_off_calib", "dual_wide_off", "dual_wide_on", "single_on"], nargs = 1,
+                    help="if set, this script will copy an example in the current directory, to form an initial YML file that you can modify. Can be on of dual_on, dual_off, dual_off_calib, dual_wide_off, dual_wide_on, single_on")
 
-if "dit" in dargs.keys():
-    show_dit_jpg()
-    sys.exit()    
-    
-# arg should be the path to the yml file    
-REQUIRED_ARGS = ["file"]
-for req in REQUIRED_ARGS:
-    if not(req in dargs.keys()):
-        printerr("Argument '"+req+"' is not optional for this script. Required args are: "+', '.join(REQUIRED_ARGS))
+parser.add_argument("--fov", metavar="FOV [mas]", type=float, default=argparse.SUPPRESS,
+                    help="field-of-view to show in the plots. Default to 10*fiver_fov")
+
+parser.add_argument("--bg", metavar="PATH", type=str, default=argparse.SUPPRESS,
+                    help="path to a image file (jpg, png, etc.) to plot as a background begind the fiber FOV")
+
+parser.add_argument("--bglim", metavar="xleft xright ybottom ytop", type=str, default=argparse.SUPPRESS, nargs=4,
+                    help="path to a image file (jpg, png, etc.) to plot as a background begind the fiber FOV")
+
+parser.add_argument("--sc_color", metavar="COLOR", type=str, default="C1",
+                    help="color to use to plot the science fiber. Must be a valid Python color string. Default is python C1.")
+
+parser.add_argument("--ft_color", metavar="COLOR", type=str, default="C0",
+                    help="color to use to plot the science fiber. Must be a valid Python color string. Default is python C0.")
+
+parser.add_argument("--acq_only", metavar="EMPTY or TRUE/FALSE", type=bool, nargs="?", default=argparse.SUPPRESS, const = True,
+                    help="if set, only plot the acquition and not the individual subplots and text info")
+
+parser.add_argument("--demo", metavar="EMPTY or TRUE/FALSE", type=bool, nargs="?", default=argparse.SUPPRESS, const = True,
+                    help="if set, send the OBs to the P2 demo server")
+
+parser.add_argument("--nogui", metavar="EMPTY or TRUE/FALSE", type=bool, nargs="?", default=argparse.SUPPRESS, const = True,
+                    help="if set, do not plot a visual summary of the OBs before sending to P2, but send them without warning")
+
+parser.add_argument("--dit", metavar="EMPTY or TRUE/FALSE", type=bool, nargs="?", default=argparse.SUPPRESS, const = True,
+                    help="if set, just show show the DIT delection figure and exit")
+
+# load arguments into a dictionnary
+args = parser.parse_args()
+dargs = vars(args) # to treat as a dictionnary
 
 # get filename and load yml
 filename = dargs["file"]
@@ -81,7 +84,7 @@ filename = dargs["file"]
 WHEREAMI = os.path.dirname(__file__)
 if "generate" in dargs:
     IS_GENERATE = True
-    genfile = "{}/examples/{}.yml".format(WHEREAMI, dargs["generate"])
+    genfile = "{}/examples/{}.yml".format(WHEREAMI, dargs["generate"][0])
     if not(os.path.isfile(genfile)):
         printerr("{} is not an example file. Is {} a valid value for 'generate'?".format(genfile, dargs["generate"]))
     if os.path.isfile(filename):
@@ -94,15 +97,15 @@ if "generate" in dargs:
     sys.exit()
 
 if not(os.path.isfile(dargs["file"])):
-    printerr("{} not found, or is not a file".format(dargs["file"]))    
+    printerr("{} not found, or is not a file".format(dargs["file"]))
 cfg = yaml.load(open(filename, "r"), Loader=yaml.Loader)
 
-        
+
 if "fov" in dargs:
     fov = int(dargs["fov"])
 else:
     fov = None
-        
+
 if "nogui" in dargs:
     nogui = dargs["nogui"]
 else:
@@ -116,7 +119,7 @@ else:
 if "acq_only" in dargs:
     acq_only = dargs["acq_only"]
 else:
-    acq_only = False    
+    acq_only = False
 
 if demo:
     # setup for testing on P2 demo server
@@ -143,7 +146,7 @@ if "ft_color" in dargs:
     FT_COLOR = dargs["ft_color"]
 if "sc_color" in dargs:
     SC_COLOR = dargs["sc_color"]
-    
+
 # Create OB
 run_id = cfg["setup"]["run_id"]
 folder_name = cfg["setup"]["folder"]
@@ -152,7 +155,7 @@ date = cfg["setup"]["date"]
 if type(date) != str:
     date = date.isoformat()
     cfg["setup"]["date"] = date
-    
+
 # create the folder if it does not exist
 myrun = None
 runs, _ = api.getRuns()
@@ -160,18 +163,18 @@ for thisrun in runs:
     if thisrun['progId'] == run_id:
         myrun = thisrun
 if myrun is None:
-    printinf("Available runs are: {}".format([r["progId"] for r in runs]))                
+    printinf("Available runs are: {}".format([r["progId"] for r in runs]))
     printerr("Run '{}' not found".format(run_id))
 folder_info = find_item(folder_name, myrun["containerId"], api, "Folder")
 if folder_info is None:
-    printinf("Creating folder '{}' in run '{}'".format(folder_name, run_id))            
+    printinf("Creating folder '{}' in run '{}'".format(folder_name, run_id))
     folder_info, version = api.createFolder(myrun["containerId"], folder_name)
 container_id = folder_info["containerId"]
 
 # if concatenation is not none, we need to create a concatenation
 concatenation = cfg["setup"]["concatenation"].rstrip().lstrip()
 if concatenation.lower() != "none":
-    printinf("Creating concatenation '{}' in folder '{}'".format(concatenation, folder_name))                
+    printinf("Creating concatenation '{}' in folder '{}'".format(concatenation, folder_name))
     con, conVersion = api.createConcatenation(container_id, concatenation)
     container_id = con["containerId"]  # new container where to put OBs
 
@@ -195,7 +198,7 @@ for ob_name in cfg["ObservingBlocks"]:
         printerr("Mode {} is unknown.".format(mode))
     p2ob.generate_templates()
     p2ob.simbad_resolve(ob)
-    # in nogui mode, we upload straight to p2    
+    # in nogui mode, we upload straight to p2
     if nogui:
         p2ob.p2_create(api, container_id)
         p2ob.p2_update(api)

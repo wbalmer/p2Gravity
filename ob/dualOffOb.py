@@ -37,6 +37,7 @@ class DualOffOb(ObservingBlock):
         the setup dict attribute will also by used to bypass some default values if required
         """        
         self.acquisition = tpl.DualOffAxisAcq()
+        self._fill_magnitudes(self.yml)
         # set target names
         if "ft_target" in self.yml:
             self.acquisition["SEQ.FT.ROBJ.NAME"] = self.yml["ft_target"]
@@ -84,9 +85,12 @@ class DualOffOb(ObservingBlock):
         generate the template from the given yml dict and exposure 
         """        
         if exposures == "swap":
-            return tpl.DualObsSwap()
+            template = tpl.DualObsSwap()            
+            template.populate_from_yml(self.yml)
+            template.populate_from_yml(obj_yml)            
         else:
             template = tpl.DualObsExp(iscalib = self.iscalib)
+            template.populate_from_yml(self.yml)            
             template.populate_from_yml(obj_yml)
             template["SEQ.OBSSEQ"] = exposures
         return template
@@ -103,7 +107,7 @@ class DualOffOb(ObservingBlock):
         for seq in sequences:
             exposures = seq.rstrip().lstrip().split(" ")
             if exposures == ["swap"]: # no test in this case
-                self.templates.append(self._generate_template(None, "swap"))
+                self.templates.append(self._generate_template(obj_yml, "swap"))
             else:
                 if not("sky" in exposures):
                     common.printwar("No sky in sequence {} in OB '{}'".format(exposures, self.label))

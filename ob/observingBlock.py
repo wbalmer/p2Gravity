@@ -18,7 +18,7 @@ from astropy.coordinates import SkyCoord
 from abc import ABC, abstractmethod
 
 # add some votable fields to get the magnitudes, proper motion, and plx required in acq template
-Simbad.add_votable_fields('flux(V)')
+Simbad.add_votable_fields('flux(G)')
 Simbad.add_votable_fields('flux(K)')
 Simbad.add_votable_fields('flux(H)')
 Simbad.add_votable_fields('flux(R)')
@@ -44,6 +44,23 @@ class ObservingBlock(object):
         self.target = dict({})
         self.ob_type = "ObservingBlock"
         self.iscalib = iscalib
+        return None
+
+    def _fill_magnitudes(self, yml):
+        """ check if magnitudes are in the given yml. If so, put them in their proper locations in acq template """
+        if "k_mag" in yml:
+            if "SEQ.INS.SOBJ.MAG" in self.acquisition:
+                self.acquisition["SEQ.INS.SOBJ.MAG"] = self.yml["k_mag"]
+            if "SEQ.FT.ROBJ.MAG" in self.acquisition:                
+                self.acquisition["SEQ.FT.ROBJ.MAG"] = self.yml["k_mag"]
+        if "h_mag" in yml:
+            if "SEQ.FT.ROBJ.HMAG" in self.acquisition:                            
+                self.acquisition["SEQ.INS.SOBJ.HMAG"] = self.yml["h_mag"]
+            if "SEQ.FT.ROBJ.HMAG" in self.acquisition:                                
+                self.acquisition["SEQ.FT.ROBJ.HMAG"] = self.yml["h_mag"]
+        if "g_mag" in yml:
+            if "COU.GS.MAG" in self.acquisition:                            
+                self.acquisition["COU.GS.MAG"] = self.yml["g_mag"]
         return None
     
     def _populate_from_simbad(self, target_table, target_name = ""):
@@ -86,8 +103,22 @@ class ObservingBlock(object):
             raise ValueError('Input not known by Simbad')
         common.printinf("Simbad resolution of {}: \n {}".format(target_name, target_table))
         if len(target_table) > 1:
-            printwar("There are multiple results from Simbad. Which one should I use? (1, 2, etc.?)")
-            stop()
+            success = False
+            common.printwar("There are multiple results from Simbad. Which one should I use? (1, 2, etc.?)")
+            inp = input(">>")
+            while not(success):
+                try:
+                    inp = int(inp)
+                except: 
+                    common.printwar("Please enter an integer value.")
+                    inp = input(">>")
+                    continue
+                if (inp>=1) and (inp<=len(target_table)):
+                    target_table = target_table[[inp-1]]
+                    success = True
+                else:
+                    common.printwar("Please enter an integer between 1 and {}".format(len(target_table)))
+                    inp = input(">>")
         self.target = dict({})
         self.target["name"] = target_name        
         self.acquisition.populate_from_simbad(target_table, target_name = target_name)
