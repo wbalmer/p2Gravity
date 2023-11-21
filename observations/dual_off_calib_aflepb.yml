@@ -6,9 +6,9 @@
 # Please refer to the ESO Template manual for additional information
 
 setup:
-  run_id: 112.25GE.003     # id of the run to upload the OB in the correct place
-  date: 2024-01-01             # Required. But only useful if 'whereistheplanet' is used to predict position of the companion
-  folder: P112run3   # Folder in P2 where the OB will be uploaded.
+  run_id: 112.25GE.002     # id of the run to upload the OB in the correct place
+  date: 2023-11-27             # Required. But only useful if 'whereistheplanet' is used to predict position of the companion
+  folder: P112run2   # Folder in P2 where the OB will be uploaded.
   INS.SPEC.RES: "MED"          # spectral resolution. LOW, MED, or HIGH
   INS.SPEC.POL: "OUT"          # Polarisation. OUT or IN
   ISS.BASELINE: ["UTs"]        # baselines (small, large, or UTs)
@@ -18,7 +18,7 @@ setup:
     skyTransparency: "Clear"
     airmass: 1.6
     moonDistance: 10
-    atm: 30%
+    atm: 50%
 
 # This section described the OBs, each made of a succession of template
 # Multiple OBs can de defined in a file, but will share the same above setup.
@@ -28,12 +28,13 @@ ObservingBlocks:
   CAL_HD25535:
     # set FT mode manually so the concat is happy
     SEQ.FT.MODE: 1
+    SEQ.SKY.Y: -2000.
     # now we move to the binary calibrator on which we need to perform a swap.
     description: binary swap for phase-reference  # a short description of what this OB is
     mode: dual_off                                # can be dual-on, dual-off, single-on, or single-off
     target: HD25535                              # this target name will be resolved in simbad to populate various fields. All used if whereitheplanet is used
-    coord_syst: whereistheplanet                 # in dual-off, the coordinates are set at acquisition. coord_syst is radec, pasep, or whereistheplanet
-    coord: HD25535B                             # units are mas and deg. ignored if coord_syst=whereistheplanet
+    coord_syst: radec                 # in dual-off, the coordinates are set at acquisition. coord_syst is radec, pasep, or whereistheplanet
+    coord: [722.1, 801.3]                             # units are mas and deg. ignored if coord_syst=whereistheplanet
     # objects is a list fiber pointings and exposure settings which will be used in the sequence
     objects:
       A:                       # first component of the binary
@@ -55,21 +56,23 @@ ObservingBlocks:
   SCI_AFLepb_3hours:
     # set FT mode manually so the concat is happy
     SEQ.FT.MODE: 1
+    SEQ.SKY.X: -2000.
+    SEQ.SKY.Y: -2000.
     SEQ.MET.MODE: FAINT
     SEQ.PICKSC: F
     # in this first OB, we'll observe the planet using whereistheplanet to set the coordinates
     description: on-planet off-axis observations  # a short description of what this OB is
     mode: dual_off                                # can be dual_wide_on, dual_wide_off, dual_on, dual_off, single_on, or single_off
     target: AF Lep                                # this target name will be resolved in simbad to populate various fields.
-    coord_syst: whereistheplanet                  # in dual-off, the coordinates are set at acquisition. coord_syst is radec, pasep, or whereistheplanet
-    coord: AFLepb                                # units are mas and deg. just the target name if coord_syst=whereistheplanet
+    coord_syst: radec                  # in dual-off, the coordinates are set at acquisition. coord_syst is radec, pasep, or whereistheplanet
+    coord: [319.706, 57.541]                                # units are mas and deg. just the target name if coord_syst=whereistheplanet
     # objects is a list fiber pointings and exposure settings which will be used in the sequence
     objects:
       b:                       # arbitrary label of you choice. In this example, b is the planet
         name: AFLepb
-        DET2.DIT: 100           # integration time (in s). Can be 0.3, 1, 3, 10, 30, 100, 300
-        DET2.NDIT.OBJECT: 4    # Number of DITs on the object (4..320)
-        DET2.NDIT.SKY: 4       # Number of DITs on sky (4..320)1
+        DET2.DIT: 30           # integration time (in s). Can be 0.3, 1, 3, 10, 30, 100, 300
+        DET2.NDIT.OBJECT: 12    # Number of DITs on the object (4..320)
+        DET2.NDIT.SKY: 12       # Number of DITs on sky (4..320)1
     # now we describe the sequence of exposures
     # in dual-off, the sequence should contain the objects above with some swap when changing from one to the other
     # in this case, we only have observations on b, and no swap. We'll make 2 templates of 2 exp each
@@ -77,7 +80,7 @@ ObservingBlocks:
       - b b sky b b
       - b b sky b b
       - b b sky b b
-      - b b
+      - b b sky b b
     calib: False
 
   CAL_AFLep:
