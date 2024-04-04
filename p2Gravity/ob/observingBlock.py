@@ -91,18 +91,14 @@ class ObservingBlock(object):
             for key in yml["constraints"]:
                 self.ob["constraints"][key] = yml["constraints"][key]
         return None
-    
-    def simbad_resolve(self, ob):
-        """
-        Search the information of the star from Simbad.
-        """
-        target_name = ob["target"]
-        common.printinf("Resolving target {} on Simbad".format(target_name))
-        target_table = Simbad.query_object(target_name)
-        if target_table is None:
+
+    def simbad_get_table(self, name):       
+        common.printinf("Resolving target {} on Simbad".format(name))
+        table = Simbad.query_object(name)
+        if table is None:
             raise ValueError('Input not known by Simbad')
-        common.printinf("Simbad resolution of {}: \n {}".format(target_name, target_table))
-        if len(target_table) > 1:
+        common.printinf("Simbad resolution of {}: \n {}".format(name, table))
+        if len(table) > 1:
             success = False
             common.printwar("There are multiple results from Simbad. Which one should I use? (1, 2, etc.?)")
             inp = input(">>")
@@ -113,15 +109,31 @@ class ObservingBlock(object):
                     common.printwar("Please enter an integer value.")
                     inp = input(">>")
                     continue
-                if (inp>=1) and (inp<=len(target_table)):
-                    target_table = target_table[[inp-1]]
+                if (inp>=1) and (inp<=len(table)):
+                    target_table = table[[inp-1]]
                     success = True
                 else:
-                    common.printwar("Please enter an integer between 1 and {}".format(len(target_table)))
+                    common.printwar("Please enter an integer between 1 and {}".format(len(table)))
                     inp = input(">>")
+        return table
+    
+    def simbad_resolve(self, ob):
+        """
+        Search the information of the stars (target and guide star) from Simbad.
+        """
+        target_name = ob["target"]
+        target_table = self.simbad_get_table(target_name)
         self.target = dict({})
         self.target["name"] = target_name        
-        self.acquisition.populate_from_simbad(target_table, target_name = target_name)
+        # get the guide star if given
+        gs_table = None
+        gs_name = None
+        if "guide_star" in ob:
+            if not(ob["guide_star"] is None):
+                gs_name = ob["guide_star"]
+                if not(ob["guide_star"].lower() in ["science", "ft"]):
+                    gs_table = self.simbad_get_table(gs_name)
+        self.acquisition.populate_from_simbad(target_table = target_table, target_name = target_name, gs_table = gs_table, gs_name = gs_name)
         self._populate_from_simbad(target_table, target_name = target_name)        
         return None
 
@@ -147,6 +159,16 @@ class ObservingBlock(object):
             template.p2_create(api, self.ob_id)        
         return None
 
+    def p2_add_utctime(self, api, intervals):
+        """
+        Add time constraints to the OB, given as a list of tuples (from, to)
+        with from and to utc strings
+        """
+        constraints = [{"from": i[0], "to": i[1]} for i in intervals] # ESO format
+        absTCs, atcVersion = api.getAbsoluteTimeConstraints(self.ob_id)
+        absTCs, atcVersion = api.saveAbsoluteTimeConstraints(self.ob_id, constraints, atcVersion)
+        return None
+                                                             
     def p2_update(self, api):
         """
         Update info of the OB on P2
@@ -163,6 +185,10 @@ class ObservingBlock(object):
         self.acquisition.p2_update(api)
         for template in self.templates:
             template.p2_update(api)
+        # add time constraints if required
+        if "absoluteTimeConstraints" in self.setup:
+            if not(self.setup["absoluteTimeConstraints"] is None):
+                self.p2_add_utctime(api, self.setup["absoluteTimeConstraints"])
         return None
     
 
