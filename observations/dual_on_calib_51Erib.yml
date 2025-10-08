@@ -1,0 +1,73 @@
+##########################################################################################
+# OB generation for 111.24MN.00X (51 Eri b monitoring campaign, PI: Balmer)
+##########################################################################################
+
+# The first section correspond to the general setup, used for all subsequence OBs in this file
+# Please refer to the ESO Template manual for additional information
+
+setup:
+  run_id: 111.24MN.004         # id of the run to upload the OB in the correct place
+  date: 2025-11-15            # Required. But only useful if 'whereistheplanet' is used to predict position of the companion
+  folder: 51Erib-nov  # Folder in P2 where the OB will be uploaded.
+  INS.SPEC.RES: "MED"          # spectral resolution. LOW, MED, or HIGH
+  INS.SPEC.POL: "OUT"          # Polarisation. OUT or IN
+  ISS.BASELINE: ["UTs"]        # baselines (small, large, or UTs)
+  ISS.VLTITYPE: ["astrometry"] # snapshot, imaging, time-series, or astrometry
+  SEQ.MET.MODE: ON          # the mode for the metrology laser. Can be FAINT, ON, or OFF  
+  concatenation: "none" # if not empty, a concatenation with this name will be created and all OBs put in here
+  constraints:                 # additional constraints
+    skyTransparency: "Clear"
+    airmass: 1.6
+    moonDistance: 10
+    atm: 30%
+
+
+# This section described the OBs, each made of a succession of template
+# Multiple OBs can de defined in a file, but will share the same above setup.
+
+ObservingBlocks:
+  # Each OB is identified by a label which will also appear in P2
+  SCI_51Erib-nov1:
+    # set FT mode manually so the concat is happy
+    SEQ.FT.MODE: 1
+    SEQ.MET.MODE: ON
+    SEQ.PICKSC: F
+    # in this first OB, we'll observe the planet using whereistheplanet to set the coordinates
+    description: on-planet on-axis observations  # a short description of what this OB is
+    mode: dual_on                               # can be dual_wide_on, dual_wide_off, dual_on, dual_off, single_on, or single_off
+    target: 51Eri                                # this target name will be resolved in simbad to populate various fields.
+    # objects is a list fiber pointings and exposure settings which will be used in the sequence
+    objects:
+      b:                       # arbitrary label of you choice. In this example, b is the planet
+        name: 51Erib
+        DET2.DIT: 30           # integration time (in s). Can be 0.3, 1, 3, 10, 30, 100, 300
+        DET2.NDIT.OBJECT: 12   # Number of DITs on the object (4..320)
+        DET2.NDIT.SKY: 12      # Number of DITs on sky (4..320)1
+        # SEQ.SKY.X: -2000
+        coord_syst: whereistheplanet   
+        coord: 51Erib                                # units are mas and deg. just the target name if coord_syst=whereistheplanet
+      s:                       # arbitrary label of you choice. In this example, s is the star
+        name: Central star     # if coord_syst is whereistheplanet, this name is used to resolve the position
+        DET2.DIT: 0.3
+        DET2.NDIT.OBJECT: 96
+        DET2.NDIT.SKY: 96
+        # SEQ.SKY.X: -2000
+        coord_syst: pasep      # coord system for fiber pointing. Can be radec, pasep, or whereistheplanet
+        coord: [0, 0]          # coordinates relative to FT target in above system. Units are mas or deg. Or a name if whereistheplanet is used
+    # in dual-on, each element corresponds to one template, and can contain a concatenation of 1 single object from above, and sky
+    sequence:
+      # - s sky       # on-star, then sky with on-star parameters
+      # - c1 c1       # 2 exposures on the first position
+      # - s           # back on star
+      # - c2 c2 sky   # 2 exposures on second position, and sky (will also be used for c1 which shares the same DITs params)
+      # - s           # back on star
+      - s sky
+      - b b sky b b
+      - s
+      - b b sky b b
+      - s sky
+      - b b sky b b
+      - s
+      - b b sky b b b
+      - s sky
+    calib: False
