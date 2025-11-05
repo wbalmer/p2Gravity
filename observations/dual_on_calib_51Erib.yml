@@ -7,8 +7,8 @@
 
 setup:
   run_id: 111.24MN.004         # id of the run to upload the OB in the correct place
-  date: 2025-11-15            # Required. But only useful if 'whereistheplanet' is used to predict position of the companion
-  folder: 51Erib-nov  # Folder in P2 where the OB will be uploaded.
+  date: 2025-11-10            # Required. But only useful if 'whereistheplanet' is used to predict position of the companion
+  folder: 51Erib-nov1  # Folder in P2 where the OB will be uploaded.
   INS.SPEC.RES: "MED"          # spectral resolution. LOW, MED, or HIGH
   INS.SPEC.POL: "OUT"          # Polarisation. OUT or IN
   ISS.BASELINE: ["UTs"]        # baselines (small, large, or UTs)
@@ -20,6 +20,8 @@ setup:
     airmass: 1.6
     moonDistance: 10
     atm: 30%
+  # absoluteTimeConstraints:
+  # - ['2025-11-01T00:00', '2025-11-30T23:59']
 
 
 # This section described the OBs, each made of a succession of template
@@ -35,7 +37,7 @@ ObservingBlocks:
     # in this first OB, we'll observe the planet using whereistheplanet to set the coordinates
     description: on-planet on-axis observations  # a short description of what this OB is
     mode: dual_on                               # can be dual_wide_on, dual_wide_off, dual_on, dual_off, single_on, or single_off
-    target: 51Eri                                # this target name will be resolved in simbad to populate various fields.
+    target: c Eri                                # this target name will be resolved in simbad to populate various fields.
     # objects is a list fiber pointings and exposure settings which will be used in the sequence
     objects:
       b:                       # arbitrary label of you choice. In this example, b is the planet
