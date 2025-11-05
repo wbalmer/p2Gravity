@@ -22,20 +22,20 @@ class DualOnOb(ObservingBlock):
         the setup dict attribute will also by used to bypass some default values if required
         """
         self.acquisition = tpl.DualOnAxisAcq()
-        self._fill_magnitudes(self.yml)        
+        self._fill_magnitudes(self.yml)      
         # set target names
         if "ft_target" in self.yml:
-            self.acquisition["SEQ.FT.ROBJ.NAME"] = self.yml["ft_target"]
+            self.acquisition["TEL.TARG.NAME"] = self.yml["ft_target"]
         else:
             if not("target" in self.yml):
                 common.printerr("No 'target' specified in ObservingBlock")
-            self.acquisition["SEQ.FT.ROBJ.NAME"] = self.yml["target"]
+            self.acquisition["TEL.TARG.NAME"] = self.yml["target"]
         if "sc_target" in self.yml:
-            self.acquisition["SEQ.INS.SOBJ.NAME"] = self.yml["sc_target"]
+            self.acquisition["TEL.TARG.NAME"] = self.yml["sc_target"]
         else:
             if not("target" in self.yml):
                 common.printerr("No 'target' specified in ObservingBlock")                        
-            self.acquisition["SEQ.INS.SOBJ.NAME"] = self.yml["target"]
+            self.acquisition["TEL.TARG.NAME"] = self.yml["target"]
         # use the mean of first position of templates to set the direction of acquisition
         dxs = np.array([tpl["SEQ.RELOFF.X"][0] for tpl in self.templates])
         dys = np.array([tpl["SEQ.RELOFF.Y"][0] for tpl in self.templates])

@@ -17,6 +17,20 @@ from astropy.coordinates import SkyCoord
 # to define abstract method
 from abc import ABC, abstractmethod
 
+# going for 0.4.7 to 0.4.8 has changed case in some astroquery fields. We need to take care of it.
+import astroquery
+from packaging.version import Version
+ASTROQUERY_OLD = Version(astroquery.__version__) < Version("0.4.8")
+ASTROQUERY_TRANSLATION = dict({"RA": "ra",
+                               "DEC": "dec",
+                               "PMRA": "pmra",
+                               "PMDEC": "pmdec",
+                               "PLX": "plx",
+                               "FLUX_G": "G",
+                               "FLUX_H": "H",
+                               "FLUX_K": "K",
+                               "FLUX_R": "R"})
+
 # add some votable fields to get the magnitudes, proper motion, and plx required in acq template
 Simbad.add_votable_fields('flux(G)')
 Simbad.add_votable_fields('flux(K)')
@@ -49,18 +63,18 @@ class ObservingBlock(object):
     def _fill_magnitudes(self, yml):
         """ check if magnitudes are in the given yml. If so, put them in their proper locations in acq template """
         if "k_mag" in yml:
-            if "SEQ.INS.SOBJ.MAG" in self.acquisition:
-                self.acquisition["SEQ.INS.SOBJ.MAG"] = self.yml["k_mag"]
-            if "SEQ.FT.ROBJ.MAG" in self.acquisition:                
-                self.acquisition["SEQ.FT.ROBJ.MAG"] = self.yml["k_mag"]
+            if "SEQ.INS.SOBJ.MAG.K" in self.acquisition:
+                self.acquisition["SEQ.INS.SOBJ.MAG.K"] = self.yml["k_mag"]
+            if "TEL.TARG.MAG.K" in self.acquisition:                
+                self.acquisition["TEL.TARG.MAG.K"] = self.yml["k_mag"]
         if "h_mag" in yml:
-            if "SEQ.FT.ROBJ.HMAG" in self.acquisition:                            
-                self.acquisition["SEQ.INS.SOBJ.HMAG"] = self.yml["h_mag"]
-            if "SEQ.FT.ROBJ.HMAG" in self.acquisition:                                
-                self.acquisition["SEQ.FT.ROBJ.HMAG"] = self.yml["h_mag"]
+            if "SEQ.INS.SOBJ.MAG.H" in self.acquisition:                            
+                self.acquisition["SEQ.INS.SOBJ.MAG.H"] = self.yml["h_mag"]
+            if "TEL.TARG.MAG.H" in self.acquisition:                                
+                self.acquisition["TEL.TARG.MAG.H"] = self.yml["h_mag"]
         if "g_mag" in yml:
-            if "COU.GS.MAG" in self.acquisition:                            
-                self.acquisition["COU.GS.MAG"] = self.yml["g_mag"]
+            if "COU.NGS.MAG" in self.acquisition:                            
+                self.acquisition["COU.NGS.MAG"] = self.yml["g_mag"]
         return None
     
     def _populate_from_simbad(self, target_table, target_name = ""):
@@ -69,12 +83,12 @@ class ObservingBlock(object):
         Simbad. Target_name is only used to display useful warning and error to the user.
         Populate: RA, DEC, PMRA, PMDEC from simbad.
         """
-        coord = SkyCoord(target_table["RA"][0], target_table['DEC'][0], unit=(u.hourangle, u.deg))
+        coord = SkyCoord(target_table["ra"][0],target_table['dec'][0], unit=u.deg)
         self.target["ra"] = coord.ra.to_string(unit=u.hourangle, sep=":", precision=3, pad=True)
         self.target["dec"] = coord.dec.to_string(sep=":", precision=3, alwayssign=True)
         try:
-            self.target["properMotionRa"] = round((target_table["PMRA"].to(u.arcsec/u.yr))[0].value, 5)
-            self.target["properMotionDec"] = round((target_table["PMDEC"].to(u.arcsec/u.yr))[0].value, 5)
+            self.target["properMotionRa"] = round((target_table["pmra"].to(u.arcsec/u.yr))[0].value, 5)
+            self.target["properMotionDec"] = round((target_table["pmdec"].to(u.arcsec/u.yr))[0].value, 5)
         except:
             common.printwar("Proper motion not found on Simbad for target {}".format(target_name))
         return None
@@ -115,7 +129,18 @@ class ObservingBlock(object):
                 else:
                     common.printwar("Please enter an integer between 1 and {}".format(len(table)))
                     inp = input(">>")
-        return table
+        # to ensure compatibility with all versions of astroquery
+        table_d = dict(table)
+        if ASTROQUERY_OLD:
+            table_translated = dict({})
+            for key in table_d:
+                if key in ASTROQUERY_TRANSLATION:
+                    table_translated[ASTROQUERY_TRANSLATION[key]] = table_d[key]
+                else:
+                    table_translated[key] = table_d[key]
+        else:
+            table_translated = table_d            
+        return table_translated
     
     def simbad_resolve(self, ob):
         """
